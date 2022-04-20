@@ -21,12 +21,12 @@ const getLastTweetsIds = async () => {
 const getTweet = async () => {
     const twitterClient = new TwitterApi(process.env.BEARER_TOKEN);
 
-    const tweets = await twitterClient.v2.search("indonesia", {
+    const tweets = await twitterClient.v2.search("indo", {
     max_results: 100,
     "tweet.fields": "lang",
     });
 
-    await tweets.fetchLast(100);
+    await tweets.fetchLast(5000);
 
     // let tweetsIds = [];
     let tweetsIds = JSON.parse(await getLastTweetsIds());
@@ -58,8 +58,15 @@ const getTweet = async () => {
     // console.log(tweetsJSON);
 }
 
+const decodeString = (str) => {
+    return str.replace(/\\u[\dA-F]{4}/gi, (unicode) => {
+        return String.fromCharCode(parseInt(unicode.replace(/\\u/g, ""), 16));
+    });
+}
+
 const getCorpus = async () => {
     let linesFiltered = [];
+    let lines = [];
     const tweets = await getTweet();
     for (const tweet of tweets) {
     let cleanedTweet = tweet.text.replace(/(?:https?|ftp):\/\/[\n\S]+/g, "");
@@ -70,13 +77,19 @@ const getCorpus = async () => {
         let regexp = /[a-zA-Z]+\s+[a-zA-Z]+/g;
         if (regexp.test(line)) {
             if (!linesFiltered.includes(line)) {
-            linesFiltered.push(line);
+                // const decodedTweet = decodeString(JSON.stringify(line));
+                // linesFiltered.push(JSON.parse(decodedTweet));
+                const unicodeRemovedTweet = line.normalize('NFD').replace(/([\u0300-\u036f]|[^0-9a-zA-Z \-"':])/g, '');
+                // Menghapus #Kosong
+                linesFiltered.push(unicodeRemovedTweet);
+                lines.push(line);
+
             }
         }
         }
     }
     }
-    console.log(linesFiltered);
+    // console.log(linesFiltered);
     let number = 1;
     for (const line of linesFiltered) {
     fs.appendFile("./corpus.txt", line + os.EOL, function (err) {
@@ -84,6 +97,18 @@ const getCorpus = async () => {
         console.log("Failed to append data");
         } else {
         console.log("Added data ", number++, "to file");
+        }
+    });
+    }
+
+    
+    let numbera = 1;
+    for (const line of lines) {
+    fs.appendFile("./corpusAsli.txt", line + os.EOL, function (err) {
+        if (err) {
+        console.log("Failed to append data");
+        } else {
+        console.log("Added data ", numbera++, "to file");
         }
     });
     }
