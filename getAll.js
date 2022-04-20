@@ -26,10 +26,7 @@ const getTweet = async () => {
     "tweet.fields": "lang",
     });
 
-    while (!tweets.done) {
-        await tweets.fetchNext();
-    }
-    // await tweets.fetchLast(5000);
+    await tweets.fetchLast(100000);
 
     // let tweetsIds = [];
     let tweetsIds = JSON.parse(await getLastTweetsIds());
